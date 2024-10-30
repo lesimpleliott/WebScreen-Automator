@@ -2,10 +2,16 @@ const puppeteer = require("puppeteer");
 const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
-const viewports = require("./viewports");
-
-const fullHeight = true; // Définir le paramètre `fullHeight` à `true` pour capturer toute la page
-const outputDir = "export"; // Dossier d'export pour les captures
+const settings = require("./settings");
+const {
+  fullHeight,
+  outputDir,
+  manualAdjustment,
+  waitTime,
+  viewports,
+  filenameType,
+  includeTimestamp,
+} = settings;
 
 // Fonction pour extraire le nom de domaine sans les routes et remplacer les points par des tirets
 function getDomainName(url) {
@@ -55,7 +61,7 @@ function getTimestamp() {
     date.getFullYear() +
     ("0" + (date.getMonth() + 1)).slice(-2) +
     ("0" + date.getDate()).slice(-2) +
-    "_" +
+    "-" +
     ("0" + date.getHours()).slice(-2) +
     ("0" + date.getMinutes()).slice(-2) +
     ("0" + date.getSeconds()).slice(-2)
@@ -76,6 +82,11 @@ function waitForEnter(message) {
   });
 }
 
+// Fonction de temporisation
+function delay(time) {
+  return new Promise((resolve) => setTimeout(resolve, time));
+}
+
 (async () => {
   // Demande des URL à l'utilisateur
   const rl = readline.createInterface({
@@ -94,7 +105,9 @@ function waitForEnter(message) {
       }
 
       for (const url of urls) {
-        const browser = await puppeteer.launch({ headless: false }); // Lancer en mode visible
+        const browser = await puppeteer.launch({
+          headless: !manualAdjustment, // Mode invisible si `manualAdjustment` est `false`
+        });
         const page = await browser.newPage();
 
         const domainName = getDomainName(url); // Obtenir le nom de domaine pour nommer les fichiers
@@ -102,41 +115,64 @@ function waitForEnter(message) {
         // Charger la page et attendre le chargement complet
         await page.goto(url, { waitUntil: "networkidle0" });
 
-        // Pause pour configurer la page manuellement une seule fois
-        await waitForEnter(
-          `🔍 Configurez la page pour "${url}" comme souhaité. Appuyez sur Entrée pour continuer...`
+        const pageTitle = await page.title().then((title) =>
+          title
+            .replace(/[^a-z0-9]+/gi, "-") // Remplace les caractères spéciaux
+            .replace(/^-+|-+$/g, "")
         );
 
+        let baseName;
+        if (filenameType === "title") {
+          baseName = pageTitle;
+        } else if (filenameType === "domain") {
+          baseName = domainName;
+        } else {
+          console.error(`Type de nom de fichier inconnu : "${filenameType}"`);
+          process.exit(1);
+        }
+
+        // Si `manualAdjustment` est activé, attend l'interaction utilisateur, sinon applique `waitTime`
+        if (manualAdjustment) {
+          await waitForEnter(
+            `🔍 Configurez la page pour "${url}". Appuyez sur Entrée pour continuer...`
+          );
+        }
+
         for (const viewport of viewports) {
-          // Garder le viewport tel quel
           await page.setViewport({
             width: viewport.width,
             height: viewport.height,
           });
 
-          // Créer le nom du fichier avec le domaine et la largeur de l'écran
-          const filename = `${domainName}_${
-            viewport.width
-          }w_${getTimestamp()}.png`;
+          // Temporisation avant chaque capture uniquement si `manualAdjustment` est vrai et `waitTime > 0`
+          if (manualAdjustment && waitTime > 0) {
+            console.log(
+              `⏳ Attente de ${waitTime / 1000} secondes avant la capture...`
+            );
+            await delay(waitTime);
+          }
 
-          // Prendre la capture d’écran de toute la page sans agrandir le viewport
+          const filename = `${baseName}_${viewport.width}w${
+            includeTimestamp ? `_${getTimestamp()}` : ""
+          }.png`;
+
           await page.screenshot({
             path: path.join(outputDir, filename),
-            fullPage: fullHeight, // Capturer toute la page en conservant le viewport initial
+            fullPage: fullHeight,
           });
 
           console.log(`✅ Capture d'écran : ${filename}`);
         }
 
-        console.log(`🚀✨ Captures d'écran terminées pour "${url}"`);
-        console.log("--");
-
+        console.log(`🚀 Captures d'écran terminées pour "${url}"`);
         await browser.close();
       }
 
-      console.log(
-        "🚀✨ Toutes les captures d'écran ont été prises pour toutes les URL."
-      );
+      if (urls.length > 1) {
+        console.log(
+          "✨ Toutes les captures d'écran ont été prises pour toutes les URL."
+        );
+      }
     }
   );
 })();
