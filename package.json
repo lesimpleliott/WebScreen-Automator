@@ -1,10 +1,12 @@
 {
   "name": "getscreenfromwebsite",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "",
   "main": "script.js",
   "scripts": {
-    "export": "node script.js"
+    "export": "node script.js",
+    "settings": "node settings_updater.js",
+    "viewports": "node viewports_updater.js"
   },
   "keywords": [],
   "author": "",

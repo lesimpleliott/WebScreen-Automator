@@ -1,131 +1,114 @@
-# Capture d'Écran Automatisée d'un site internet
+# GetScreenFromWebsite
 
-auteur : Eliott Lesimple (eleGarage.fr)
-version : 1.0.0
-date : 27/10/2024
+## Description
 
-Ce script utilise Puppeteer pour capturer des captures d’écran d’une page web aux différentes résolutions spécifiées dans un fichier de configuration externe (`viewports.js`).
-Il est conçu pour permettre une configuration manuelle initiale, puis capturer automatiquement toute la page pour chaque résolution, avec le navigateur visible durant le processus.
+**GetScreenFromWebsite** est un utilitaire basé sur Node.js qui utilise Puppeteer pour capturer des captures d'écran de sites web selon différents viewports. Ce projet facilite l'automatisation de la prise de captures d'écran pour tester l'affichage de sites sur divers dispositifs et résolutions.
 
-## Prérequis
+## Table des Matières
 
-- **Node.js** (version 12 ou supérieure)
-- **Puppeteer** : Pour automatiser le navigateur (installation dans les étapes ci-dessous)
+- [Installation](#installation)
+- [Utilisation](#utilisation)
+- [Configuration](#configuration)
+- [Export](#export)
+- [Fonctionnalités](#fonctionnalités)
+- [Dépendances](#dépendances)
+- [Contributeurs](#contributeurs)
 
 ## Installation
 
-1. **Cloner le projet** ou télécharger les fichiers requis.
-2. **Installer les dépendances** avec `npm install` :
-
+1. Assurez-vous d'avoir [Node.js](https://nodejs.org/) installé sur votre système.
+2. Clonez le dépôt :
    ```bash
-   npm install puppeteer prompt-sync
+   git clone <url-du-repo>
+   cd getscreenfromwebsite
+   ```
+3. Installez les dépendances nécessaires :
+   ```bash
+   npm install
    ```
 
-3. **Vérifier le fichier `viewports.js`** : Assurez-vous que le fichier existe et contient les configurations de viewport souhaitées. Le format attendu est le suivant :
+## Utilisation
 
-   ```javascript
-   // viewports.js
-   module.exports = [
-     { screen: string, width: number, height: number },
-     { screen: string, width: number, height: number },
-     { screen: string, width: number, height: number },
-   ];
-   ```
+- **`npm run export`** : Exécute `script.js` pour capturer des captures d'écran.
+- **`npm run settings`** : Exécute `settings_updater.js` pour modifier les paramètres de configuration.
+- **`npm run viewports`** : Exécute `viewports_updater.js` pour gérer les viewports.
 
-## Utilisation du Script
+## Configuration
 
-### Lancement du script
+### `npm run settings`
 
-Pour exécuter le script, utilisez la commande suivante :
+La commande `npm run settings` permet de modifier les paramètres de configuration du projet. Lors de son exécution, le script `settings_updater.js` est lancé, et l'utilisateur peut interagir via la console pour mettre à jour les configurations définies dans `settings.js`.
 
-```bash
-npm run export
-```
+**Réglages disponibles et leur signification :**
 
-### Fonctionnalités
+- **`fullHeight`** : Définit si la capture doit couvrir toute la hauteur de la page. `true` capture la page entière, `false` capture uniquement la partie visible.
+- **`outputDir`** : Spécifie le répertoire où les captures d'écran seront enregistrées.
+- **`manualAdjustment`** : Active (`true`) ou désactive (`false`) la possibilité d'ajuster la page manuellement avant la capture.
+- **`waitTime`** : Temps en millisecondes à attendre avant de prendre la capture d'écran, permettant le chargement des animations ou du contenu dynamique.
+- **`viewports`** : Une liste des configurations de tailles d'écran (voir ci-dessous pour des détails supplémentaires).
+- **`filenameType`** : Type de nommage des fichiers générés (`"title"` utilise le titre de la page, `"domain"` utilise le nom de domaine).
+- **`includeTimestamp`** : Indique si un horodatage doit être inclus dans le nom du fichier.
 
-- **Configuration initiale manuelle** : Le navigateur s’ouvre, charge l’URL spécifiée, et attend que l’utilisateur appuie sur `Entrée` dans le terminal pour démarrer les captures d’écran. Cela permet d’ajuster la page manuellement (fermer des pop-ups, changer de thème, entrer les mots de passe etc.).
-- **Captures d’écran multi-résolutions** : Pour chaque résolution définie dans `viewports.js`, le script ajuste le viewport et capture l’intégralité de la page et sur toute sa hauteur.
-- **Affichage en mode visible** : Le navigateur reste visible tout au long du processus, permettant de suivre visuellement chaque étape de la capture.
+Cette commande permet une personnalisation précise des paramètres pour s'adapter aux besoins des tests et des captures.
 
-### Options Personnalisables
+### `npm run viewports`
 
-1. **URL** : Vous pouvez saisir une ou plusieurs URL lors du lancement du script, séparées par des virgules (ex. : elegarage.fr, github.com). Le script accepte chaque URL avec ou sans protocole (http://, https:// ou simplement www.) et les normalise automatiquement.
+La commande `npm run viewports` est utilisée pour gérer les configurations des viewports. Elle lance le script `viewports_updater.js`, permettant de manipuler les tailles d'écran simulées pour les captures d'écran.
 
-   - Saisie multiple d’URL : Si vous entrez plusieurs URL, le script les traite successivement, en lançant une session de capture d’écran distincte pour chaque URL.
-   - Validation : Le script vérifie que chaque URL est valide et affiche un message d’erreur si l’une d’entre elles est incorrectement formatée ou non séparée par des virgules.
-   - Exemple de saisie :
+**Fonctionnement :**
 
-```bash
-elegarage.fr, katelio.fr, https://github.com/lesimpleliott
-```
+- Le script affiche la liste actuelle des viewports configurés.
+- L'utilisateur peut choisir de :
+  - **(A)jouter** un nouveau viewport en précisant un label, une largeur (`width`) et une hauteur (`height`).
+  - **(M)odifier** un viewport existant en mettant à jour ses dimensions ou son label.
+  - **(S)upprimer** un viewport de la liste pour affiner les tests.
+  - **(Q)uitter** les configurations existantes sont sauvegardées et le script est fermé.
 
-2. **fullHeight** : Contrôle si toute la hauteur de la page doit être capturée.
+Les modifications sont sauvegardées dans `settings.js`, garantissant leur application lors de la prochaine exécution.
 
-   - Type : `boolean`
-   - Valeur par défaut : `true`
-   - Description : Si `true`, le script capture toute la hauteur de la page (en scrollant automatiquement) pour chaque résolution. Si `false`, il capture uniquement la hauteur du viewport défini.
-   - Exemple d’utilisation :
-     ```javascript
-     const fullHeight = false; // Capture uniquement la partie visible
-     const fullHeight = true; // Capture toute la hauteur de la page
-     ```
+**Explications des attributs de viewport :**
 
-3. **viewports.js** : Contient les configurations de résolution.
+- **`label`** : Une étiquette descriptive pour identifier le viewport (ex. : `mobile`, `desktop`).
+- **`width`** : La largeur du viewport en pixels.
+- **`height`** : La hauteur du viewport en pixels.
 
-   - Structure : Tableau d’objets avec les clés `screen`, `width`, et `height`.
-   - Exemple :
-     ```javascript
-     [
-       { screen: "mobile", width: 375, height: 667 },
-       { screen: "tablet", width: 768, height: 1024 },
-       { screen: "desktop", width: 1440, height: 900 },
-       // etc.
-     ];
-     ```
-   - Le nom de chaque capture d’écran inclut la largeur définie dans `width`.
+Ces attributs permettent de simuler des écrans spécifiques pour tester la réactivité et l'affichage de votre site web sur différentes résolutions.
 
-4. **outputDir** : Dossier d’export pour les captures.
-   - Type : `string`
-   - Valeur par défaut : `export`
-   - Description : Dossier où les captures d’écran seront enregistrées. Le script crée ce dossier s’il n’existe pas.
+## Export
 
-### Exemple d'Exécution
+### `npm run export`
 
-Étape 1 : Personnaliser le fichier **viewports.js**
+La commande `npm run export` est la commande principale utilisée pour lancer le script `script.js`, qui effectue la capture d'écran des sites web spécifiés.
 
-```javascript
-[
-  { screen: "80", width: 1194, height: 688 },
-  { screen: "90", width: 1342, height: 756 },
-  { screen: "100", width: 1492, height: 840 },
-];
-```
+**Fonctionnement :**
 
-Étape 2 : Lancer le script et suivre les instructions
+- Demande à l'utilisateur de saisir une ou plusieurs URLs.
+- Charge chaque URL et applique les viewports définis.
+- Prend des captures d'écran de la page entière ou de la vue spécifiée.
+- Les fichiers sont sauvegardés dans `outputDir` avec un nom basé sur le type de nommage choisi et l'option d'horodatage.
 
-```bash
-npm run export
-Entrez l'URL du site à capturer : elegarage.fr, https://github.com/lesimpleliott
-🔍 Configurez la page comme souhaité. Appuyez sur Entrée pour continuer...
-```
+**Étapes importantes :**
 
-Étape 3 : Fichiers exportés
+1. **Chargement des URLs** : Validation et normalisation des URLs.
+2. **Navigation** : Chargement des pages avec Puppeteer et ajustements selon `manualAdjustment`.
+3. **Capture** : Prend et enregistre les captures d'écran selon la configuration.
+4. **Enregistrement** : Sauvegarde les captures avec un format personnalisé.
 
-```
-export/
-├── elegarage-fr_1194w.png
-├── elegarage-fr_1342w.png
-├── elegarage-fr_1492w.png
-├── github-com_1194w.png
-├── github-com_1342w.png
-└── github-com_1492w.png
-```
+Cette commande est idéale pour automatiser la prise de captures d'écran sur plusieurs appareils simulés et obtenir un aperçu de l'affichage de votre site web.
 
----
+## Fonctionnalités
 
-### Notes
+- Capture d'écran de pages web sur plusieurs appareils et résolutions.
+- Options d'ajustement manuel avant la capture.
+- Gestion facile des paramètres et des viewports.
+- Génération de noms de fichiers personnalisés avec ou sans horodatage.
 
-- **Noms de fichier personnalisés** : Les captures incluent le nom de domaine et la largeur pour faciliter l’organisation.
-- **Configurations manuelles** : Le script offre une grande flexibilité en permettant des réglages initiaux manuels avant le lancement des captures d’écran.
-- **Dépendances** : Assurez-vous que `puppeteer` et `prompt-sync` sont installés pour exécuter le script correctement.
+## Dépendances
+
+Ce projet utilise les dépendances suivantes :
+
+- **puppeteer** (v23.6.0)
+
+## Contributeurs
+
+- Eliott Lesimple - eLeGarage
